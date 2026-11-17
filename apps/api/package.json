@@ -1,5 +1,5 @@
 {
-  "name": "@erp/api",
+  "name": "@agentic-erp/api",
   "private": true,
   "scripts": {
     "dev": "node --env-file-if-exists=../../.env --watch -r ts-node/register src/main.ts",

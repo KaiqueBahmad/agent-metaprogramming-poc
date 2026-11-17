@@ -75,18 +75,29 @@ aside {
 }
 .brand {
   font-family: "Manrope", sans-serif;
-  font-size: 37px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 28px;
+  line-height: 1.15;
   font-weight: 800;
-  letter-spacing: -2px;
+  letter-spacing: -1.2px;
   text-decoration: none;
   color: #154b3d;
   margin: 0 12px 36px;
 }
-.brand span:first-child {
-  color: #71945b;
+.brand-name {
+  color: #154b3d;
 }
-.brand-dot {
-  color: #9cae65;
+.brand-product {
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: #edf2e4;
+  color: #6f8955;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 .workspace {
   display: flex;
@@ -851,7 +862,7 @@ label select {
 }
 .login-card .brand {
   margin: 0 0 44px;
-  font-size: 45px;
+  font-size: 40px;
 }
 .login-card h1 {
   font-size: 30px;

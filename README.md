@@ -1,6 +1,6 @@
-# Forma ERP — POC
+# agent-metaprogramming-poc
 
-ERP com NestJS, SQLite nativo do Node e React + Vite. Login, múltiplas empresas e permissões por vínculo. Sem ORM ou migrations. O assistente usa LangChain, ferramentas do ERP e aprovações por conversa; veja [configuração, arquitetura e avaliações](docs/assistant.md).
+**Agentic ERP** é uma prova de conceito de metaprogramação para agentes, construída com NestJS, SQLite nativo do Node e React + Vite. Login, múltiplas empresas e permissões por vínculo. Sem ORM ou migrations. O assistente usa LangChain, ferramentas do ERP e aprovações por conversa; veja [configuração, arquitetura e avaliações](docs/assistant.md).
 
 ## Executar
 

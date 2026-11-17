@@ -1,4 +1,4 @@
-# Assistente do ERP
+# Assistente do Agentic ERP
 
 O chat usa LangChain para schemas, ferramentas, mensagens e chamadas ao modelo. O loop de inferência e o executor pertencem à aplicação: o backend controla descoberta, aprovação, autorização, persistência e despacho. O frontend não decide permissões nem executa regras de negócio.
 

@@ -375,7 +375,7 @@ export function Assistant({
                 <Sparkles size={21} />
               </div>
               <div className="assistant-heading">
-                <h2 id="assistant-title">Assistente forma</h2>
+                <h2 id="assistant-title">Assistente Agentic ERP</h2>
                 <p>{company.name}</p>
               </div>
               <button
@@ -612,7 +612,7 @@ export function Assistant({
                           <span className="assistant-message-label">
                             {message.role === "user"
                               ? "Você"
-                              : "Assistente forma"}
+                              : "Assistente Agentic ERP"}
                           </span>
                           <div>{message.text}</div>
                         </div>

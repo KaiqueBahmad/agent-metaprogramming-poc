@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Building2, LogOut, Plus, Users, ArrowRight } from "lucide-react";
 import { Company, request, Session, User } from "./api";
+import { Brand } from "./brand";
 import { ErpApp } from "./erp-app";
 
 type Member = {
@@ -48,7 +49,7 @@ function Login({
   return (
     <div className="login-page">
       <section className="login-card">
-        <div className="brand">forma.</div>
+        <Brand />
         <div className="eyebrow">SEU NEGÓCIO, EM ORDEM</div>
         <h1>Entre no seu espaço.</h1>
         <p>
@@ -211,9 +212,7 @@ export function SessionApp() {
   return (
     <div className="management-page">
       <header>
-        <a href="/" className="brand">
-          forma.
-        </a>
+        <Brand link />
         <div className="profile">
           <span>
             {session.user.name} ·{" "}

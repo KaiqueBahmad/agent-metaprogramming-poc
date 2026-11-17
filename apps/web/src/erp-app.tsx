@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { request, Company, Session } from "./api";
+import { Brand } from "./brand";
 import { Assistant } from "./assistant";
 import {
   LayoutDashboard,
@@ -237,11 +238,9 @@ export function ErpApp({
   return (
     <div className="app">
       <aside>
-        <a className="brand" href="/">
-          f<span>o</span>rma<span className="brand-dot">.</span>
-        </a>
+        <Brand link />
         <div className="workspace">
-          <div className="avatar">F</div>
+          <div className="avatar">{company.name.trim().charAt(0).toUpperCase()}</div>
           <div>
             <strong>{company.name}</strong>
             <small>{company.role}</small>
@@ -669,7 +668,7 @@ export function ErpApp({
                   <span className="live-dot" /> Tudo conectado, do pedido ao
                   estoque.
                 </span>
-                <span>forma ERP · POC</span>
+                <span>Agentic ERP · POC</span>
               </footer>
             </>
           )}
