@@ -1,0 +1,27 @@
+{
+  "name": "erp-poc",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=24.15"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "build": "npm run build --workspaces",
+    "start": "npm run start -w apps/api",
+    "clear": "tsx scripts/database.ts clear",
+    "seed": "tsx scripts/database.ts seed",
+    "reset": "npm run clear && npm run seed",
+    "test": "tsx --test apps/api/src/erp.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "concurrently": "^9.2.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
