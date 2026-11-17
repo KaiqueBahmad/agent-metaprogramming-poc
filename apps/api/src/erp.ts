@@ -4,18 +4,18 @@ import { z } from "zod";
 import { transaction } from "./database";
 const idSchema = z.coerce.number().int().positive();
 const money = z.number().int().nonnegative().max(100000000);
-const customerSchema = z.object({
+export const customerSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.union([z.email(), z.literal("")]).default(""),
   document: z.string().trim().max(30).default(""),
 });
-const productSchema = z.object({
+export const productSchema = z.object({
   name: z.string().trim().min(2).max(120),
   sku: z.string().trim().min(1).max(40),
   price: money,
   stock: z.number().int().nonnegative().max(1000000).default(0),
 });
-const orderSchema = z.object({
+export const orderSchema = z.object({
   customerId: idSchema,
   items: z
     .array(
@@ -26,6 +26,10 @@ const orderSchema = z.object({
     )
     .min(1)
     .max(100),
+});
+export const restockSchema = z.object({
+  quantity: z.number().int().positive().max(1000000),
+  reason: z.string().trim().min(3).max(200),
 });
 export function parse<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
@@ -101,13 +105,7 @@ export class Erp {
       .run(this.companyId, productId, orderId, quantity, reason);
   }
   restock(id: number, input: unknown) {
-    const v = parse(
-      z.object({
-        quantity: z.number().int().positive().max(1000000),
-        reason: z.string().trim().min(3).max(200),
-      }),
-      input,
-    );
+    const v = parse(restockSchema, input);
     return transaction(this.db, () => {
       if (
         !this.db

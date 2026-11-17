@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { agentSockets } from "./assistant/dispatch";
 import { Companies } from "./companies";
 import { Identity, requireAdmin, User } from "./identity";
 
@@ -22,6 +23,8 @@ export type AuthRequest = {
   user: User;
   companyId: number;
   token: string;
+  socket?: object;
+  origin?: "agent";
 };
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) =>
@@ -47,6 +50,7 @@ export class AuthGuard implements CanActivate {
     const targets = [context.getHandler(), context.getClass()];
     if (this.reflector.getAllAndOverride<boolean>(PUBLIC, targets)) return true;
     const req = context.switchToHttp().getRequest<AuthRequest>();
+    if (req.socket && agentSockets.has(req.socket)) req.origin = "agent";
     const header = req.headers.authorization;
     if (
       typeof header !== "string" ||

@@ -2,62 +2,12 @@
 require("reflect-metadata");
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { Duplex } = require("node:stream");
 const { DatabaseSync } = require("node:sqlite");
 const { NestFactory } = require("@nestjs/core");
 const { AppModule } = require("../apps/api/dist/app.module");
 const { seed, demoPassword } = require("../apps/api/dist/seed");
 
-function dispatch(app, path, { method = "GET", body, token, companyId } = {}) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    const timeout = setTimeout(() => {
-      socket.destroy();
-      reject(new Error(`Timeout: ${method} ${path}`));
-    }, 3000);
-    const socket = new Duplex({
-      allowHalfOpen: true,
-      read() {},
-      write(chunk, encoding, callback) {
-        chunks.push(Buffer.from(chunk));
-        callback();
-      },
-      final(callback) {
-        clearTimeout(timeout);
-        try {
-          const response = Buffer.concat(chunks).toString();
-          const split = response.indexOf("\r\n\r\n");
-          resolve({
-            status: Number(response.split(" ")[1]),
-            body: JSON.parse(response.slice(split + 4)),
-          });
-        } catch (e) {
-          reject(e);
-        }
-        callback();
-      },
-    });
-    socket.on("error", (error) => {
-      clearTimeout(timeout);
-      reject(error);
-    });
-    const payload = body === undefined ? "" : JSON.stringify(body);
-    const headers = [
-      `${method} ${path} HTTP/1.1`,
-      "Host: localhost",
-      "Connection: close",
-    ];
-    if (token) headers.push(`Authorization: Bearer ${token}`);
-    if (companyId) headers.push(`X-Company-Id: ${companyId}`);
-    if (body !== undefined)
-      headers.push(
-        "Content-Type: application/json",
-        `Content-Length: ${Buffer.byteLength(payload)}`,
-      );
-    app.getHttpServer().emit("connection", socket);
-    socket.push(Buffer.from(`${headers.join("\r\n")}\r\n\r\n${payload}`));
-  });
-}
+const { dispatch } = require("./http.cjs");
 
 test("pipeline HTTP autenticado e multiempresa", async (t) => {
   process.env.DATABASE_PATH = ":memory:";
@@ -68,7 +18,7 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
     const login = async (email) => {
       const result = await dispatch(app, "/api/auth/login", {
         method: "POST",
-        body: { email, password: demoPassword },
+        body: { email, password: demoPassword }
       });
       assert.equal(result.status, 201);
       assert.ok(!("password_hash" in result.body.user));
@@ -91,7 +41,7 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
         assert.equal((await dispatch(app, "/api/customers")).status, 401);
         assert.equal(
           (await dispatch(app, "/api/products", { token: ana })).status,
-          400,
+          400
         );
         assert.equal(
           (
@@ -99,21 +49,21 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
               method: "POST",
               body: {},
               token: ana,
-              companyId: forma,
+              companyId: forma
             })
           ).status,
-          400,
+          400
         );
         assert.equal(
           (
             await dispatch(app, "/api/auth/login", {
               method: "POST",
-              body: { email: "ana@forma.example", password: "errada" },
+              body: { email: "ana@forma.example", password: "errada" }
             })
           ).status,
-          401,
+          401
         );
-      },
+      }
     );
     await t.test(
       "somente ADMIN cadastra empresa e usuário global",
@@ -124,14 +74,14 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
               await dispatch(app, "/api/companies", {
                 method: "POST",
                 body: { name: "Proibida" },
-                token,
+                token
               })
             ).status,
-            403,
+            403
           );
           assert.equal(
             (await dispatch(app, "/api/users", { token })).status,
-            403,
+            403
           );
           assert.equal(
             (
@@ -141,18 +91,18 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
                   name: "Teste",
                   email: "novo@forma.example",
                   password: demoPassword,
-                  role: "ADMIN",
+                  role: "ADMIN"
                 },
-                token,
+                token
               })
             ).status,
-            403,
+            403
           );
         }
         const created = await dispatch(app, "/api/companies", {
           method: "POST",
           body: { name: "Nova empresa" },
-          token: admin,
+          token: admin
         });
         assert.equal(created.status, 201);
         assert.equal(
@@ -160,64 +110,64 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
             await dispatch(app, `/api/companies/${created.body.id}/members`, {
               method: "POST",
               body: { email: "ana@forma.example", role: "DONO" },
-              token: admin,
+              token: admin
             })
           ).status,
-          201,
+          201
         );
-      },
+      }
     );
     await t.test(
       "vínculo determina acesso e papel em cada empresa",
       async () => {
         assert.equal(
           (await dispatch(app, "/api/companies", { token: carla })).body.length,
-          2,
+          2
         );
         assert.equal(
           (
             await dispatch(app, "/api/products", {
               token: carla,
-              companyId: horizonte,
+              companyId: horizonte
             })
           ).status,
-          403,
+          403
         );
         assert.equal(
           (
             await dispatch(app, `/api/companies/${forma}/members`, {
-              token: bruno,
+              token: bruno
             })
           ).status,
-          403,
+          403
         );
         assert.equal(
           (
             await dispatch(app, `/api/companies/${botanico}/members`, {
-              token: bruno,
+              token: bruno
             })
           ).status,
-          200,
+          200
         );
         assert.equal(
           (
             await dispatch(app, `/api/companies/${forma}/members`, {
-              token: ana,
+              token: ana
             })
           ).status,
-          200,
+          200
         );
         assert.equal(
           (
             await dispatch(app, `/api/companies/${forma}/members`, {
               method: "POST",
               body: { email: "carla@forma.example", role: "DONO" },
-              token: ana,
+              token: ana
             })
           ).status,
-          403,
+          403
         );
-      },
+      }
     );
     await t.test(
       "dados e referências de outra empresa não atravessam o escopo",
@@ -225,13 +175,13 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
         const customersA = (
           await dispatch(app, "/api/customers", {
             token: ana,
-            companyId: forma,
+            companyId: forma
           })
         ).body;
         const productsB = (
           await dispatch(app, "/api/products", {
             token: ana,
-            companyId: horizonte,
+            companyId: horizonte
           })
         ).body;
         assert.ok(customersA.every((c) => c.company_id === forma));
@@ -241,14 +191,14 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
           companyId: forma,
           body: {
             customerId: customersA[0].id,
-            items: [{ productId: productsB[0].id, quantity: 1 }],
-          },
+            items: [{ productId: productsB[0].id, quantity: 1 }]
+          }
         });
         assert.equal(cross.status, 400);
         const otherOrder = (
           await dispatch(app, "/api/orders", {
             token: ana,
-            companyId: horizonte,
+            companyId: horizonte
           })
         ).body[0];
         assert.equal(
@@ -257,10 +207,10 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
               method: "POST",
               body: {},
               token: ana,
-              companyId: forma,
+              companyId: forma
             })
           ).status,
-          404,
+          404
         );
         const product = await dispatch(app, "/api/products", {
           method: "POST",
@@ -271,19 +221,19 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
             sku: "FUNC-001",
             price: 100,
             stock: 2,
-            company_id: horizonte,
-          },
+            company_id: horizonte
+          }
         });
         assert.equal(product.status, 201);
         assert.ok(
           !(
             await dispatch(app, "/api/products", {
               token: ana,
-              companyId: horizonte,
+              companyId: horizonte
             })
-          ).body.some((p) => p.sku === "FUNC-001"),
+          ).body.some((p) => p.sku === "FUNC-001")
         );
-      },
+      }
     );
     await t.test(
       "remoção de vínculo e logout têm efeito na próxima requisição",
@@ -297,44 +247,44 @@ test("pipeline HTTP autenticado e multiempresa", async (t) => {
             await dispatch(
               app,
               `/api/companies/${forma}/members/${member.id}/remove`,
-              { method: "POST", body: {}, token: ana },
+              { method: "POST", body: {}, token: ana }
             )
           ).status,
-          201,
+          201
         );
         assert.equal(
           (
             await dispatch(app, "/api/products", {
               token: carla,
-              companyId: forma,
+              companyId: forma
             })
           ).status,
-          403,
+          403
         );
         assert.equal(
           (
             await dispatch(app, "/api/products", {
               token: carla,
-              companyId: botanico,
+              companyId: botanico
             })
           ).status,
-          200,
+          200
         );
         assert.equal(
           (
             await dispatch(app, "/api/auth/logout", {
               method: "POST",
               body: {},
-              token: carla,
+              token: carla
             })
           ).status,
-          201,
+          201
         );
         assert.equal(
           (await dispatch(app, "/api/auth/me", { token: carla })).status,
-          401,
+          401
         );
-      },
+      }
     );
   } finally {
     await app.close();

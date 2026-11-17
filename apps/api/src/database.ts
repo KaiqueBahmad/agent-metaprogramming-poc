@@ -51,6 +51,11 @@ const schema = `
   CREATE INDEX IF NOT EXISTS idx_orders_company ON orders(company_id);
   CREATE INDEX IF NOT EXISTS idx_items_order ON order_items(order_id,company_id);
   CREATE INDEX IF NOT EXISTS idx_movements_company ON movements(company_id);
+  CREATE TABLE IF NOT EXISTS assistant_conversations (
+    id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id),
+    company_id INTEGER NOT NULL REFERENCES companies(id), updated_at INTEGER NOT NULL, payload TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_assistant_scope ON assistant_conversations(user_id,company_id,updated_at);
   PRAGMA user_version=2;
 `;
 
@@ -95,7 +100,7 @@ export function transaction<T>(db: DatabaseSync, fn: () => T): T {
 
 export function clear(db: DatabaseSync) {
   transaction(db, () => {
-    db.exec(`DROP TABLE IF EXISTS movements; DROP TABLE IF EXISTS order_items;
+    db.exec(`DROP TABLE IF EXISTS assistant_conversations; DROP TABLE IF EXISTS movements; DROP TABLE IF EXISTS order_items;
       DROP TABLE IF EXISTS orders; DROP TABLE IF EXISTS products; DROP TABLE IF EXISTS customers;
       DROP TABLE IF EXISTS sessions; DROP TABLE IF EXISTS memberships;
       DROP TABLE IF EXISTS companies; DROP TABLE IF EXISTS users;`);

@@ -1,6 +1,6 @@
 # Forma ERP — POC
 
-ERP com NestJS, SQLite nativo do Node e React + Vite. Login, múltiplas empresas e permissões por vínculo. Sem ORM, migrations ou funcionalidades de IA; `DX.MD` continua apenas como proposta.
+ERP com NestJS, SQLite nativo do Node e React + Vite. Login, múltiplas empresas e permissões por vínculo. Sem ORM ou migrations. O assistente usa LangChain, ferramentas do ERP e aprovações por conversa; veja [configuração, arquitetura e avaliações](docs/assistant.md).
 
 ## Executar
 
@@ -9,8 +9,11 @@ Requer Node.js **24.15+** e npm 11+.
 ```bash
 npm install
 npm run seed
+cp .env.example .env
 npm run dev
 ```
+
+Para usar o chat, configure o `.env` para [AWS/Bedrock ou uma API sem AWS](docs/assistant.md#configurar-o-modelo). Para demonstrar com o login do Codex e o modelo legado, execute `npm run dev:codex`.
 
 Interface: http://localhost:5173 · API: http://localhost:3000/api
 
@@ -124,12 +127,13 @@ Produto: `{ "name": "Caderno", "sku": "CAD-001", "price": 3490, "stock": 20 }`.
 | `npm test`          | Testes de negócio, autorização, isolamento e pipeline HTTP   |
 | `npm run test:unit` | Regras de negócio e guards com SQLite em memória             |
 | `npm run test:api`  | Compila a API e testa o pipeline HTTP sem abrir portas       |
+| `npm run eval:assistant` | Avalia o modelo e as ferramentas em banco em memória; exige modelo configurado ou ponte de inferência |
 | `npm run build`     | Compila API e frontend                                       |
 | `npm start`         | Inicia somente a API compilada                               |
 
 Pare a aplicação antes de `clear` ou `reset`. Ambos apagam dados; preserve uma cópia se precisar deles. As sessões anteriores deixam de funcionar, então entre novamente após o reset. O seed é explícito e não roda ao iniciar a aplicação.
 
-O banco fica em `data/erp.sqlite`, independentemente do diretório de execução. As variáveis opcionais estão em `.env.example`; `.env` não é carregado automaticamente:
+O banco fica em `data/erp.sqlite`, independentemente do diretório de execução. Os exemplos estão em `.env.example` (Bedrock) e `.env.openai.example` (sem AWS). A API e as avaliações carregam `.env` da raiz automaticamente; exports do bash têm prioridade:
 
 ```bash
 DATABASE_PATH=/tmp/minha-poc.sqlite PORT=3000 npm run dev
@@ -159,4 +163,4 @@ scripts/
   api.test.cjs           # integração com o pipeline HTTP real do Nest
 ```
 
-Sem fiscal, contas a pagar, descontos, parcelas, recuperação de senha ou devolução de venda recebida. Clientes e produtos permitem cadastro e consulta. CPF/CNPJ é texto livre. A POC não implementa planos de assinatura nem qualquer mecanismo do DX/IA.
+Sem fiscal, contas a pagar, descontos, parcelas, recuperação de senha ou devolução de venda recebida. Clientes e produtos permitem cadastro e consulta. CPF/CNPJ é texto livre. A POC não implementa planos de assinatura. O assistente implementa o catálogo anotado, descoberta sob demanda, execução autorizada e políticas de aprovação; detalhes e limites estão em [docs/assistant.md](docs/assistant.md).
