@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { request, Company, Session } from "./api";
+import { Assistant } from "./assistant";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -674,6 +675,7 @@ export function ErpApp({
           )}
         </div>
       </main>
+      <Assistant company={company} data={data} />
       {modal && data && (
         <div className="overlay" onClick={() => !busy && setModal("")}>
           <section
