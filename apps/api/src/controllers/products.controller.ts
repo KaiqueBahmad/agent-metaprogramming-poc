@@ -1,17 +1,19 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
-import { Erp } from "../erp";
+import { ErpFactory } from "../erp";
+import { CompanyRequired, CurrentCompany } from "../auth";
 
+@CompanyRequired()
 @Controller("api/products")
 export class ProductsController {
-  constructor(private readonly erp: Erp) {}
+  constructor(private readonly erp: ErpFactory) {}
 
   @Get()
-  list() {
-    return this.erp.products();
+  list(@CurrentCompany() companyId: number) {
+    return this.erp.forCompany(companyId).products();
   }
 
   @Post()
-  create(@Body() body: unknown) {
-    return this.erp.createProduct(body);
+  create(@CurrentCompany() companyId: number, @Body() body: unknown) {
+    return this.erp.forCompany(companyId).createProduct(body);
   }
 }

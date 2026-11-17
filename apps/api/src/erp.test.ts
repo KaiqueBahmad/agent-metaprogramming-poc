@@ -4,7 +4,10 @@ import { openDatabase, clear } from "./database";
 import { Erp } from "./erp";
 function fixture() {
   const db = openDatabase(":memory:");
-  const erp = new Erp(db);
+  const company = db
+    .prepare("INSERT INTO companies(name) VALUES(?)")
+    .run("Empresa teste");
+  const erp = new Erp(db, Number(company.lastInsertRowid));
   const c = erp.createCustomer({ name: "Cliente teste" });
   const p = erp.createProduct({
     name: "Produto teste",

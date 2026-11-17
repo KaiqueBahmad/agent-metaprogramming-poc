@@ -12,10 +12,12 @@
     "dev": "concurrently -k -n api,web \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "build": "npm run build --workspaces",
     "start": "npm run start -w apps/api",
-    "clear": "tsx scripts/database.ts clear",
-    "seed": "tsx scripts/database.ts seed",
+    "clear": "node --import tsx scripts/database.ts clear",
+    "seed": "node --import tsx scripts/database.ts seed",
     "reset": "npm run clear && npm run seed",
-    "test": "tsx --test apps/api/src/erp.test.ts"
+    "test": "npm run test:unit && npm run test:api",
+    "test:unit": "tsc -p apps/api/tsconfig.test.json && node --import tsx --test apps/api/src/*.test.ts",
+    "test:api": "npm run build -w apps/api && node --test scripts/api.test.cjs"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

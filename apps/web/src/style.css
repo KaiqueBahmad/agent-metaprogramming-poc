@@ -808,3 +808,199 @@ label select {
     width: 55px;
   }
 }
+
+.company-switch {
+  font-size: 10px;
+  color: #75866e;
+  margin-bottom: 22px;
+}
+.company-switch select {
+  font-size: 11px;
+  padding: 10px 7px;
+}
+.workspace-controls {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+}
+.workspace-controls button {
+  font-size: 11px;
+  justify-content: flex-start;
+  background: transparent;
+}
+.signed-user {
+  font-size: 11px;
+  text-align: right;
+}
+.signed-user small {
+  display: block;
+  font-size: 9px;
+  margin-top: 4px;
+}
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: white;
+}
+.login-card {
+  max-width: 510px;
+  width: 100%;
+  padding: 60px 42px;
+  margin: auto;
+}
+.login-card .brand {
+  margin: 0 0 44px;
+  font-size: 45px;
+}
+.login-card h1 {
+  font-size: 30px;
+  margin-top: 15px;
+}
+.login-card form {
+  padding: 25px 0;
+}
+.login-card form > .primary {
+  width: 100%;
+}
+.demo-accounts {
+  padding: 18px;
+  background: #f2f5ed;
+  border-radius: 10px;
+  font-size: 11px;
+}
+.demo-accounts p {
+  font-size: 11px;
+  margin-top: 7px;
+  overflow-wrap: anywhere;
+}
+.login-art {
+  background: #205744;
+  color: #eaf0df;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 65px;
+  gap: 25px;
+}
+.login-art h2 {
+  font-size: 42px;
+  line-height: 1.3;
+  letter-spacing: -1.5px;
+  margin: 0;
+}
+.login-art p {
+  color: #c0d2b8;
+  max-width: 350px;
+  font-size: 15px;
+}
+.management-page {
+  min-height: 100vh;
+}
+.management-page header .brand {
+  font-size: 30px;
+  margin: 0;
+}
+.management-content {
+  max-width: 1280px;
+  margin: auto;
+  padding: 38px 30px;
+}
+.company-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 20px;
+  margin-bottom: 26px;
+}
+.company-card {
+  padding: 25px;
+  position: relative;
+}
+.company-card > svg {
+  color: #76946d;
+}
+.company-card > .badge {
+  float: right;
+}
+.company-card h2 {
+  font-size: 20px;
+  margin: 20px 0 8px;
+}
+.company-card .actions {
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+.company-card .actions button {
+  font-size: 11px;
+}
+.management-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(290px, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.management-grid .full-width {
+  grid-column: 1/-1;
+  margin: 0;
+}
+.management-grid .form-note {
+  margin-bottom: 18px;
+}
+.management-grid .panel > form {
+  padding-top: 0;
+}
+.admin-panel {
+  margin-top: 36px;
+}
+.users-panel {
+  margin-top: 24px;
+}
+@media (max-width: 760px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+  .login-art {
+    display: none;
+  }
+  .login-card {
+    padding: 35px 24px;
+  }
+  .login-card .brand {
+    margin-bottom: 30px;
+  }
+  .management-content {
+    padding: 25px 16px;
+  }
+  .management-grid {
+    grid-template-columns: 1fr;
+  }
+  .management-page header {
+    height: auto;
+    min-height: 70px;
+    gap: 10px;
+  }
+  .management-page .profile {
+    gap: 10px;
+    font-size: 10px;
+  }
+  .workspace-controls {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+  }
+  .workspace-controls button {
+    font-size: 10px;
+    padding: 7px;
+  }
+  .company-switch {
+    order: 2;
+    width: 100%;
+    margin: 0;
+  }
+  .signed-user {
+    font-size: 10px;
+  }
+  .company-card .actions {
+    gap: 8px;
+  }
+}

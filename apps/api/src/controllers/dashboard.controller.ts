@@ -1,12 +1,14 @@
 import { Controller, Get } from "@nestjs/common";
-import { Erp } from "../erp";
+import { ErpFactory } from "../erp";
+import { CompanyRequired, CurrentCompany } from "../auth";
 
+@CompanyRequired()
 @Controller("api/dashboard")
 export class DashboardController {
-  constructor(private readonly erp: Erp) {}
+  constructor(private readonly erp: ErpFactory) {}
 
   @Get()
-  summary() {
-    return this.erp.dashboard();
+  summary(@CurrentCompany() companyId: number) {
+    return this.erp.forCompany(companyId).dashboard();
   }
 }
