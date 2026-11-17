@@ -165,6 +165,14 @@ test("assistente: inferência, ferramentas, aprovações e isolamento pelo pipel
         assert.equal(pending.status, "awaiting_approval");
         assert.equal(pending.pending.length, 1);
         assert.equal(
+          pending.pending[0].approvalMessage,
+          "Cadastrar o cliente “Cliente aprovado”. Sem e-mail. Sem documento."
+        );
+        assert.equal(
+          (await api(`conversations/${c.id}`)).body.pending[0].approvalMessage,
+          pending.pending[0].approvalMessage
+        );
+        assert.equal(
           db.prepare("SELECT count(*) n FROM customers").get().n,
           count
         );
@@ -916,6 +924,118 @@ test("assistente: inferência, ferramentas, aprovações e isolamento pelo pipel
           assert.ok(result.tool_calls[0].id);
         } finally {
           childProcess.spawn = originalSpawn;
+        }
+      }
+    );
+    await t.test(
+      "formatador recebe payload validado e não modifica os argumentos originais",
+      async () => {
+        const catalog = app.get(ToolCatalog);
+        const context = { token: ana, companyId };
+        const entry = catalog.definition("cadastrar_cliente", context);
+        const original = entry.approvalMessage;
+        let calls = 0;
+        try {
+          entry.approvalMessage = async (input, actor) => {
+            calls++;
+            assert.equal(input.name, "Cliente normalizado");
+            assert.equal(input.email, "");
+            assert.equal(actor.companyId, companyId);
+            assert.ok(!("token" in actor));
+            input.name = "Tentativa de alteração";
+            return "Texto personalizado";
+          };
+          const input = { name: "  Cliente normalizado  " };
+          assert.equal(
+            await catalog.approvalMessage("cadastrar_cliente", input, context),
+            "Texto personalizado"
+          );
+          assert.deepEqual(input, { name: "  Cliente normalizado  " });
+          await assert.rejects(() =>
+            catalog.approvalMessage("cadastrar_cliente", { name: "X" }, context)
+          );
+          assert.equal(calls, 1);
+        } finally {
+          entry.approvalMessage = original;
+        }
+      }
+    );
+    await t.test(
+      "aprovações em lote recebem textos antes da pausa e o formatador é opcional",
+      async () => {
+        const c = await create();
+        responses = [
+          group("clientes"),
+          new AIMessage({
+            content: "",
+            tool_calls: [
+              {
+                id: randomUUID(),
+                name: "cadastrar_cliente",
+                args: { name: "Cliente lote A" }
+              },
+              {
+                id: randomUUID(),
+                name: "cadastrar_cliente",
+                args: { name: "Cliente lote B" }
+              }
+            ]
+          }),
+          new AIMessage("Chamadas rejeitadas.")
+        ];
+        const pending = (await send(c.id, "Cadastre dois clientes")).body;
+        assert.equal(pending.pending.length, 2);
+        assert.ok(
+          pending.pending[0].approvalMessage.includes("Cliente lote A")
+        );
+        assert.ok(
+          pending.pending[1].approvalMessage.includes("Cliente lote B")
+        );
+        await decide(c.id, pending.pending, "reject");
+        assert.equal(
+          await app
+            .get(ToolCatalog)
+            .approvalMessage(
+              "consultar_indicadores",
+              {},
+              { token: ana, companyId }
+            ),
+          undefined
+        );
+      }
+    );
+    await t.test(
+      "falha na apresentação mantém os argumentos disponíveis sem executar a escrita",
+      async () => {
+        const entry = app
+          .get(ToolCatalog)
+          .definition("cadastrar_cliente", { token: ana, companyId });
+        const original = entry.approvalMessage;
+        try {
+          entry.approvalMessage = () => {
+            throw new Error("Erro no formatador");
+          };
+          const c = await create();
+          responses = [
+            group("clientes"),
+            call("cadastrar_cliente", { name: "Cliente fallback" }),
+            new AIMessage("Rejeitado.")
+          ];
+          const pending = (await send(c.id)).body;
+          assert.equal(pending.status, "awaiting_approval");
+          assert.equal(pending.pending[0].approvalMessage, undefined);
+          assert.equal(pending.pending[0].args.name, "Cliente fallback");
+          assert.equal(
+            db
+              .prepare(
+                "SELECT count(*) n FROM customers WHERE name='Cliente fallback'"
+              )
+              .get().n,
+            0
+          );
+          await decide(c.id, pending.pending, "reject");
+        } finally {
+          entry.approvalMessage = original;
         }
       }
     );

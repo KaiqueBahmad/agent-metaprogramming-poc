@@ -4,6 +4,7 @@ export type PendingCall = {
   id: string;
   name: string;
   description: string;
+  approvalMessage?: string;
   effect: "read" | "write";
   args: Record<string, unknown>;
 };

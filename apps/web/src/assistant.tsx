@@ -659,8 +659,12 @@ export function Assistant({
                             : "Aprovar consulta"}
                         </strong>
                       </div>
-                      <p>{call.description}</p>
-                      <pre>{JSON.stringify(call.args, null, 2)}</pre>
+                      <p className="assistant-approval-message">
+                        {call.approvalMessage || call.description}
+                      </p>
+                      {!call.approvalMessage && (
+                        <pre>{JSON.stringify(call.args, null, 2)}</pre>
+                      )}
                       <div>
                         <button
                           disabled={busy}

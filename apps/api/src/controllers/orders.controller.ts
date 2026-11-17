@@ -38,7 +38,9 @@ export class OrdersController {
     description:
       "Cria um pedido em rascunho para um cliente com produtos existentes.",
     effect: "write",
-    schema: orderSchema
+    schema: orderSchema,
+    approvalMessage: ({ customerId, items }) =>
+      `Criar um pedido em rascunho para o cliente #${customerId}: ${items.map(({ productId, quantity }) => `${quantity} unidade(s) do produto #${productId}`).join("; ")}.`
   })
   @Post()
   create(@CurrentCompany() companyId: number, @Body() body: unknown) {
@@ -53,7 +55,13 @@ export class OrdersController {
     schema: z.object({
       id: z.number().int().positive(),
       action: z.enum(["confirm", "pay", "cancel"])
-    })
+    }),
+    approvalMessage: ({ id, action }) =>
+      ({
+        confirm: `Confirmar o pedido #${id} e baixar os produtos do estoque.`,
+        pay: `Registrar o recebimento integral do pedido #${id}.`,
+        cancel: `Cancelar o pedido #${id}. Se a venda já foi confirmada, os produtos serão devolvidos ao estoque.`
+      })[action]
   })
   @Post(":id/:action")
   transition(

@@ -25,7 +25,9 @@ export class StockController {
     name: "registrar_entrada_estoque",
     description: "Repõe estoque de um produto, com quantidade e motivo.",
     effect: "write",
-    schema: restockSchema.extend({ id: z.number().int().positive() })
+    schema: restockSchema.extend({ id: z.number().int().positive() }),
+    approvalMessage: ({ id, quantity, reason }) =>
+      `Adicionar ${quantity} unidade(s) ao estoque do produto #${id}. Motivo: ${reason}.`
   })
   @Post("products/:id/restock")
   restock(

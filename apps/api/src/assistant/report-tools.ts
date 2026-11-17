@@ -20,6 +20,8 @@ export class ReportTools {
       "Resume quantidade e valor do estoque em centavos e lista produtos com até o limite informado.",
     effect: "read",
     schema: z.object({ limite: z.number().int().min(0).max(1000000) }),
+    approvalMessage: ({ limite }) =>
+      `Consultar a análise gerencial do estoque e listar produtos com até ${limite} unidades.`,
     canUse: canManage,
     authorize: canManage
   })

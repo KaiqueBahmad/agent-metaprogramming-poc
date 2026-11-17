@@ -11,6 +11,7 @@ export type PendingCall = {
   args: Record<string, unknown>;
   effect: "read" | "write";
   description: string;
+  approvalMessage?: string;
   status: "pending" | "approved" | "rejected" | "running" | "done";
   output?: unknown;
 };

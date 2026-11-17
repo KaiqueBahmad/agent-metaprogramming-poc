@@ -29,7 +29,9 @@ export class ProductsController {
     name: "cadastrar_produto",
     description: "Cadastra um produto. Informe preço em centavos.",
     effect: "write",
-    schema: productSchema
+    schema: productSchema,
+    approvalMessage: ({ name, sku, price, stock }) =>
+      `Cadastrar o produto “${name}” (SKU ${sku}) por ${(price / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}, com estoque inicial de ${stock} unidades.`
   })
   @Post()
   create(@CurrentCompany() companyId: number, @Body() body: unknown) {

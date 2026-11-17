@@ -487,3 +487,8 @@
     animation: none;
   }
 }
+
+.assistant-approval-message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

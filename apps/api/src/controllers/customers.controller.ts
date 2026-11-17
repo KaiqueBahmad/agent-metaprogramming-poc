@@ -29,7 +29,13 @@ export class CustomersController {
     name: "cadastrar_cliente",
     description: "Cadastra um cliente.",
     effect: "write",
-    schema: customerSchema
+    schema: customerSchema,
+    approvalMessage: ({ name, email, document }) =>
+      [
+        `Cadastrar o cliente “${name}”.`,
+        email ? `E-mail: ${email}.` : "Sem e-mail.",
+        document ? `Documento: ${document}.` : "Sem documento."
+      ].join(" ")
   })
   @Post()
   create(@CurrentCompany() companyId: number, @Body() body: unknown) {

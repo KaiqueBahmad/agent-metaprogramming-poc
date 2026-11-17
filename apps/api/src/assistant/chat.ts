@@ -286,6 +286,19 @@ export class AssistantChat {
       for (let step = 0; step < 20; step++) {
         this.scope(context); // Revalida sessão e vínculo inclusive após espera por aprovação.
         for (const call of conversation.calls) {
+          if (call.status !== "pending" || call.approvalMessage) continue;
+          try {
+            call.approvalMessage = await this.catalog.approvalMessage(
+              call.name,
+              call.args,
+              context
+            );
+          } catch {
+            // Mantém os argumentos visíveis se o formatador falhar. A validação
+            // e a autorização continuam sendo verificadas pelo executor abaixo.
+          }
+        }
+        for (const call of conversation.calls) {
           if (call.status === "done") continue;
           if (call.status === "running") {
             this.finishCall(

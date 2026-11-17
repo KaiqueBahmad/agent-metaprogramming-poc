@@ -93,6 +93,25 @@ As rotas reentram no servidor HTTP do Nest por um socket em memória e percorrem
 
 O grupo independente `analises` demonstra a autorização própria: `analisar_estoque` fica disponível apenas para ADMIN/DONO e calcula unidades, valor em centavos e estoque abaixo de um limite.
 
+## Mensagem de aprovação
+
+`@AgentRoute` e `@AgentAction` aceitam `approvalMessage` opcional para apresentar o payload como texto ao usuário:
+
+```ts
+@AgentRoute({
+  name: "cadastrar_cliente",
+  description: "Cadastra um cliente.",
+  effect: "write",
+  schema: customerSchema,
+  approvalMessage: ({ name, email }) =>
+    `Cadastrar o cliente “${name}”${email ? ` com e-mail ${email}` : " sem e-mail"}.`
+})
+```
+
+A função recebe os argumentos validados (incluindo defaults e normalizações do schema) e, como segundo parâmetro, o contexto autenticado sem credenciais. Pode retornar uma string ou uma Promise de string. Recebe cópias dos dados, para não modificar os argumentos da chamada. Deve apenas formatar a apresentação, sem executar operações de negócio.
+
+O backend salva o texto junto da aprovação pendente. O frontend o renderiza como texto, sem interpretar HTML e sem mostrar o JSON. A decisão continua vinculada ao identificador da chamada e aos argumentos mantidos no servidor. O texto não é produzido pelo modelo nem enviado como instrução a ele. Sem formatador, ou se ele falhar/retornar texto vazio ou acima de 4.000 caracteres, a interface mantém a descrição e o JSON para revisão.
+
 ## Aprovação e recuperação
 
 Cada conversa tem política `none` (aprovar tudo manualmente), `reads` (leituras automáticas) ou `all` (leituras e escritas automáticas). A decisão usa o `effect` declarado na ferramenta, não o texto produzido pelo modelo. Aprovar não substitui autorização. O executor revalida sessão e vínculo após esperas e antes de cada execução.

@@ -167,6 +167,26 @@ export class ToolCatalog implements OnModuleInit {
     ) as Record<string, unknown>;
   }
 
+  async approvalMessage(
+    name: string,
+    input: unknown,
+    context: ExecutorContext
+  ) {
+    const definition = this.definition(name, context);
+    if (!definition.approvalMessage) return undefined;
+    const args = this.validate(name, input, context);
+    // O formatador recebe cópias: sua apresentação não altera a chamada aprovada.
+    const message = await definition.approvalMessage(
+      structuredClone(args),
+      structuredClone(this.context(context))
+    );
+    return typeof message === "string" &&
+      message.trim().length > 0 &&
+      message.length <= 4000
+      ? message.trim()
+      : undefined;
+  }
+
   async execute(name: string, input: unknown, context: ExecutorContext) {
     const entry = this.definition(name, context);
     const args = this.validate(name, input, context);
