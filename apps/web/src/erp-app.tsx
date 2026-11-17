@@ -675,7 +675,7 @@ export function ErpApp({
           )}
         </div>
       </main>
-      <Assistant company={company} data={data} />
+      <Assistant company={company} data={data} userId={session.user.id} />
       {modal && data && (
         <div className="overlay" onClick={() => !busy && setModal("")}>
           <section

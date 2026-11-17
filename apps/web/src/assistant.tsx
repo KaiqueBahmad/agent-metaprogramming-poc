@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, ChevronRight, MessageSquare, Plus, Settings2, ShieldCheck, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowUp, ChevronRight, History, MessageSquare, Plus, Trash2, Settings2, ShieldCheck, Sparkles, X } from "lucide-react";
 import { Company } from "./api";
 import "./assistant.css";
 
@@ -10,6 +10,18 @@ type Snapshot = {
   dashboard: { sales: number; receivable: number; received: number; lowStock: number };
 };
 type Message = { role: "user" | "assistant"; text: string };
+type Policy = "none" | "reads" | "all";
+type Conversation = { id: string; title: string; messages: Message[]; policy: Policy; draft: string; updatedAt: number };
+function newConversation(): Conversation {
+  return { id: crypto.randomUUID(), title: "Nova conversa", messages: [], policy: "reads", draft: "", updatedAt: Date.now() };
+}
+function readConversations(key: string): Conversation[] {
+  try {
+    const saved: unknown = JSON.parse(localStorage.getItem(key) || "null");
+    if (!Array.isArray(saved)) return [];
+    return saved.filter((item): item is Conversation => item && typeof item.id === "string" && typeof item.title === "string" && typeof item.draft === "string" && Number.isFinite(item.updatedAt) && !Number.isNaN(new Date(item.updatedAt).getTime()) && ["none", "reads", "all"].includes(item.policy) && Array.isArray(item.messages) && item.messages.every((message: Message) => message && ["user", "assistant"].includes(message.role) && typeof message.text === "string"));
+  } catch { return []; }
+}
 const suggestions = ["Como está minha operação?", "O que está com estoque baixo?", "Quais pedidos estão pendentes?"];
 const currency = (value: number) => (value / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -32,12 +44,43 @@ function reply(prompt: string, data: Snapshot | null) {
   return "Posso ajudar com um resumo da operação, produtos com estoque baixo e pedidos pendentes. Escolha uma sugestão ou pergunte sobre um desses assuntos.";
 }
 
-export function Assistant({ company, data }: { company: Company; data: Snapshot | null }) {
+export function Assistant({ company, data, userId }: { company: Company; data: Snapshot | null; userId: number }) {
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState(false);
-  const [policy, setPolicy] = useState("reads");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [draft, setDraft] = useState("");
+  const storageKey = `forma-assistant:${userId}:${company.id}`;
+  const [conversations, setConversations] = useState<Conversation[]>(() => {
+    const saved = readConversations(storageKey);
+    return saved.length ? saved.sort((a, b) => b.updatedAt - a.updatedAt) : [newConversation()];
+  });
+  const [activeId, setActiveId] = useState(() => conversations[0].id);
+  const [history, setHistory] = useState(false);
+  const [storageError, setStorageError] = useState(false);
+  const active = conversations.find((conversation) => conversation.id === activeId) || conversations[0];
+  const { policy, messages, draft } = active;
+  function updateActive(update: Partial<Conversation>) {
+    setConversations((current) => current.map((conversation) => conversation.id === active.id ? { ...conversation, ...update, updatedAt: Date.now() } : conversation));
+  }
+  function startConversation() {
+    if (!active.messages.length && !active.draft.trim()) {
+      setHistory(false); setSettings(false); return;
+    }
+    const conversation = newConversation();
+    setConversations((current) => [conversation, ...current]);
+    setActiveId(conversation.id);
+    setHistory(false);
+    setSettings(false);
+  }
+  function removeConversation(id: string) {
+    panel.current?.querySelector<HTMLButtonElement>("#assistant-history button")?.focus();
+    const remaining = conversations.filter((conversation) => conversation.id !== id);
+    if (!remaining.length) remaining.push(newConversation());
+    setConversations(remaining);
+    if (activeId === id) setActiveId(remaining[0].id);
+  }
+  useEffect(() => {
+    try { localStorage.setItem(storageKey, JSON.stringify(conversations)); setStorageError(false); }
+    catch { setStorageError(true); }
+  }, [conversations, storageKey]);
   const panel = useRef<HTMLElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const launcher = useRef<HTMLButtonElement>(null);
@@ -66,6 +109,9 @@ export function Assistant({ company, data }: { company: Company; data: Snapshot 
         if (panel.current?.querySelector("#assistant-settings")) {
           setSettings(false);
           panel.current.querySelector<HTMLButtonElement>('[aria-controls="assistant-settings"]')?.focus();
+        } else if (panel.current?.querySelector("#assistant-history")) {
+          setHistory(false);
+          panel.current.querySelector<HTMLButtonElement>('[aria-controls="assistant-history"]')?.focus();
         } else setOpen(false);
       }
       if (event.key !== "Tab") return;
@@ -82,13 +128,17 @@ export function Assistant({ company, data }: { company: Company; data: Snapshot 
       launcher.current?.focus();
     };
   }, [open]);
-  useEffect(() => { if (open) end.current?.scrollIntoView({ block: "nearest" }); }, [messages, open]);
+  useEffect(() => {
+    if (!open) return;
+    if (history) panel.current?.querySelector<HTMLButtonElement>("#assistant-history button")?.focus();
+    else input.current?.focus();
+  }, [activeId, history, open]);
+  useEffect(() => { if (open) end.current?.scrollIntoView({ block: "nearest" }); }, [messages, open, history]);
 
   function send(value: string) {
     const text = value.trim();
     if (!text) return;
-    setMessages((current) => [...current, { role: "user", text }, { role: "assistant", text: reply(text, data) }]);
-    setDraft("");
+    updateActive({ messages: [...messages, { role: "user", text }, { role: "assistant", text: reply(text, data) }], draft: "", title: messages.length ? active.title : text.slice(0, 70) });
     input.current?.focus();
   }
 
@@ -101,19 +151,31 @@ export function Assistant({ company, data }: { company: Company; data: Snapshot 
         <header className="assistant-header">
           <div className="assistant-mark"><Sparkles size={21} /></div>
           <div className="assistant-heading"><h2 id="assistant-title">Assistente forma</h2><p>{company.name}</p></div>
-          <button className="assistant-icon" title="Nova conversa" aria-label="Nova conversa" disabled={!messages.length} onClick={() => { setMessages([]); setDraft(""); setPolicy("reads"); setSettings(false); input.current?.focus(); }}><Plus size={19} /></button>
-          <button className="assistant-icon" aria-label="Configurações do assistente" aria-expanded={settings} aria-controls="assistant-settings" onClick={() => setSettings(!settings)}><Settings2 size={18} /></button>
+          <button className="assistant-icon" aria-label="Conversas" aria-expanded={history} aria-controls="assistant-history" onClick={() => { setHistory(!history); setSettings(false); }}><History size={19} /></button>
+          <button className="assistant-icon" title="Nova conversa" aria-label="Nova conversa" onClick={startConversation}><Plus size={19} /></button>
+          <button className="assistant-icon" aria-label="Configurações do assistente" aria-expanded={settings} aria-controls="assistant-settings" onClick={() => { setSettings(!settings); setHistory(false); }}><Settings2 size={18} /></button>
           <button className="assistant-icon" aria-label="Fechar assistente" onClick={() => setOpen(false)}><X size={20} /></button>
         </header>
         {settings && <div id="assistant-settings" className="assistant-settings">
           <label htmlFor="assistant-policy"><ShieldCheck size={16} /> Aprovação de ferramentas</label>
-          <select id="assistant-policy" value={policy} onChange={(event) => setPolicy(event.target.value)}>
+          <select id="assistant-policy" value={policy} onChange={(event) => updateActive({ policy: event.target.value as Policy })}>
             <option value="none">Pedir aprovação para tudo</option>
             <option value="reads">Aprovar apenas leituras automaticamente</option>
             <option value="all">Aprovar leituras e escritas automaticamente</option>
           </select>
 
         </div>}
+        {storageError && <p className="assistant-storage-error" role="status">Não foi possível salvar o histórico neste navegador. Suas conversas continuam disponíveis enquanto esta tela estiver aberta.</p>}
+        {history ? <div className="assistant-history" id="assistant-history">
+          <div className="assistant-history-heading"><button className="assistant-icon" aria-label="Voltar à conversa" onClick={() => setHistory(false)}><ArrowLeft size={17} /></button><h3>Suas conversas</h3><span>{conversations.length}</span></div>
+          <p className="assistant-history-note">{company.name} · Salvas neste navegador</p>
+          <div className="assistant-history-list">{[...conversations].sort((a, b) => b.updatedAt - a.updatedAt).map((conversation) => <div key={conversation.id} className={`assistant-history-item ${conversation.id === active.id ? "is-active" : ""}`}>
+            <button className="assistant-history-select" aria-current={conversation.id === active.id ? "true" : undefined} onClick={() => { setActiveId(conversation.id); setHistory(false); }}>
+              <MessageSquare size={17} /><span><strong>{conversation.title}</strong><small>{conversation.messages.at(-1)?.text || conversation.draft || "Comece uma nova conversa"}</small><time dateTime={new Date(conversation.updatedAt).toISOString()}>{new Date(conversation.updatedAt).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</time></span>
+            </button>
+            <button className="assistant-icon assistant-history-delete" aria-label={`Excluir conversa: ${conversation.title}`} onClick={() => removeConversation(conversation.id)}><Trash2 size={15} /></button>
+          </div>)}</div>
+        </div> : <>
         <div className="assistant-conversation">
           {messages.length === 0 ? <div className="assistant-welcome">
             <div className="assistant-welcome-icon"><MessageSquare size={29} /><Sparkles size={15} /></div>
@@ -130,11 +192,12 @@ export function Assistant({ company, data }: { company: Company; data: Snapshot 
           </div>}
         </div>
         <form className="assistant-composer" onSubmit={(event) => { event.preventDefault(); send(draft); }}>
-          <div className="assistant-input-wrap"><textarea ref={input} aria-label="Mensagem para o assistente" placeholder="O que você precisa acompanhar?" value={draft} maxLength={2000} rows={2} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => {
+          <div className="assistant-input-wrap"><textarea ref={input} aria-label="Mensagem para o assistente" placeholder="O que você precisa acompanhar?" value={draft} maxLength={2000} rows={2} onChange={(event) => updateActive({ draft: event.target.value })} onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(draft); }
           }} /><button type="submit" disabled={!draft.trim()} aria-label="Enviar mensagem"><ArrowUp size={19} /></button></div>
           <div className="assistant-composer-note"><ShieldCheck size={13} /><span>{policy === "none" ? "Aprovação para todas as ferramentas" : policy === "reads" ? "Aprovação antes de alterações" : "Aprovação automática de leituras e escritas"}</span></div>
         </form>
+        </>}
       </section>
     </div>}
   </>;
