@@ -60,7 +60,9 @@ Mantenha a API em `3000` para usar o proxy padrão, ou ajuste `apps/web/vite.con
 
 ```text
 apps/api/src/
-  main.ts          # módulo Nest e rotas HTTP
+  main.ts          # inicialização da API
+  app.module.ts    # registro de controllers e provider do ERP
+  controllers/     # clientes, produtos, pedidos, estoque, painel e health
   erp.ts           # validação Zod e regras transacionais
   database.ts      # conexão, estrutura e limpeza
   erp.test.ts      # testes com banco em memória
